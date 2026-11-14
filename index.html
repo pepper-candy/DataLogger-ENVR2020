@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0c0f14">
+  <meta name="description" content="ENVR 2020 field data logger. Records stay on this device.">
+  <title>ENVR2020 DATA LOGGER</title>
+  
+  <style>
+    :root {
+      --bg: #0c0f14;
+      --bg-2: #12171f;
+      --surface: #1a212c;
+      --surface-2: #232c3a;
+      --line: #3d4a5c;
+      --text: #f4f1ea;
+      --muted: #b9b2a6;
+      --faint: #8b8378;
+      --amber: #ffb020;
+      --amber-dim: #c48412;
+      --amber-ink: #1a1200;
+      --loc-high: #ffb020;
+      --loc-high-ink: #1a1200;
+      --loc-mid: #2ad4c2;
+      --loc-mid-ink: #04221e;
+      --loc-urban: #ff6bb5;
+      --loc-urban-ink: #2a0014;
+      --ok: #3ddc97;
+      --danger: #ff7a6b;
+      --tap: 48px;
+      --radius: 14px;
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-t: env(safe-area-inset-top, 0px);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #07090c;
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+        "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      font-size: 17px;
+      line-height: 1.35;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      touch-action: manipulation;
+    }
+    body {
+      min-height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      background: var(--bg);
+      padding: calc(12px + var(--safe-t)) 14px calc(96px + var(--safe-b));
+    }
+    img, svg { display: block; }
+    button, input { font: inherit; color: inherit; }
+    button {
+      appearance: none;
+      -webkit-appearance: none;
+      border: 0;
+      background: none;
+      padding: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+    }
+    h1, h2, p { margin: 0; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 8;
+      background: color-mix(in srgb, var(--bg) 92%, transparent);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      margin: -12px -14px 14px;
+      padding: 10px 14px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: var(--tap);
+    }
+    .title-row h1,
+    .title-row #locSwitch,
+    .title-row .icon-btn {
+      align-self: center;
+    }
+    @media (min-width: 390px) {
+      #locSwitch {
+        flex-direction: row;
+        align-items: baseline;
+        justify-content: center;
+        gap: 6px;
+        width: auto;
+        min-width: 132px;
+        padding: 6px 16px;
+      }
+      #locSwitch .en { font-size: 0.95rem; }
+      #locSwitch .zh { font-size: 0.78rem; font-weight: 600; opacity: 0.85; }
+    }
+
+
+    h1 {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1px;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      font-weight: 800;
+      text-align: left;
+      line-height: 1.15;
+    }
+    h1 .brand {
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      opacity: 0.92;
+    }
+    h1 .product {
+      font-size: 0.82rem;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+    #locSwitch {
+      flex: 0 0 auto;
+      min-width: 112px;
+      width: 112px;
+      max-width: none;
+      min-height: var(--tap);
+      padding: 4px 14px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      font-weight: 800;
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+    #locSwitch .en { font-size: 0.95rem; white-space: nowrap; }
+    #locSwitch .zh { font-size: 0.72rem; font-weight: 600; opacity: 0.78; white-space: nowrap; }
+    #locSwitch[data-loc="high"] {
+      background: var(--loc-high);
+      color: var(--loc-high-ink);
+    }
+    #locSwitch[data-loc="mid"] {
+      background: var(--loc-mid);
+      color: var(--loc-mid-ink);
+    }
+    #locSwitch[data-loc="urban"] {
+      background: var(--loc-urban);
+      color: var(--loc-urban-ink);
+    }
+    #locSwitch:active { filter: brightness(1.08); }
+    .icon-btn {
+      flex: 0 0 auto;
+      width: var(--tap);
+      height: var(--tap);
+      min-width: var(--tap);
+      min-height: var(--tap);
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      color: var(--text);
+      position: relative;
+    }
+    .icon-btn:active { background: var(--surface-2); }
+    .icon-btn svg { width: 22px; height: 22px; }
+    .badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: var(--amber);
+      color: var(--amber-ink);
+      font-size: 11px;
+      font-weight: 800;
+      display: grid;
+      place-items: center;
+    }
+    .badge[hidden] { display: none; }
+    #clearBtn {
+      flex: 0 0 auto;
+      width: 56px;
+      height: var(--tap);
+      min-width: 56px;
+      min-height: var(--tap);
+      border-radius: 14px;
+      background: var(--danger);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      border: 0;
+    }
+    #clearBtn[hidden] { display: none; }
+    #clearBtn svg { width: 28px; height: 22px; }
+    #clearBtn:active { filter: brightness(0.9); }
+    .section { margin: 0 0 16px; }
+    .lab {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin: 0 0 8px 2px;
+      font-weight: 700;
+    }
+    .lab .zh { font-weight: 500; color: var(--faint); font-size: 0.82rem; }
+    .penta {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+    }
+    .penta .cell:nth-child(1) { grid-column: 1 / 3; }
+    .penta .cell:nth-child(2) { grid-column: 3 / 5; }
+    .penta .cell:nth-child(3) { grid-column: 5 / 7; }
+    .penta .cell:nth-child(4) { grid-column: 2 / 4; }
+    .penta .cell:nth-child(5) { grid-column: 4 / 6; }
+    .pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .gps-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr minmax(68px, 0.72fr) var(--tap);
+      gap: 8px;
+      align-items: end;
+    }
+    .mini {
+      font-size: 0.75rem;
+      color: var(--faint);
+      font-weight: 600;
+      margin: 0 0 4px 2px;
+    }
+    input[type="text"] {
+      width: 100%;
+      min-height: var(--tap);
+      height: 52px;
+      border-radius: 12px;
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      padding: 0 10px;
+      font-size: 16px;
+      font-variant-numeric: tabular-nums;
+      caret-color: var(--amber);
+    }
+    input[type="text"]:focus {
+      outline: 2px solid var(--amber);
+      outline-offset: 1px;
+      border-color: var(--amber-dim);
+    }
+    .locate {
+      width: var(--tap);
+      height: 52px;
+      min-width: var(--tap);
+      min-height: var(--tap);
+      border-radius: 14px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      color: var(--amber);
+    }
+    .locate:active { background: var(--surface-2); }
+    .locate svg { width: 22px; height: 22px; }
+    .locate.busy { opacity: 0.45; }
+    .checks {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 4px 0 8px;
+    }
+    .check {
+      min-height: var(--tap);
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      font-weight: 700;
+    }
+    .check input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .box {
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      border: 2px solid var(--line);
+      background: var(--bg-2);
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+    .box svg { width: 16px; height: 16px; opacity: 0; color: var(--amber-ink); }
+    .check:has(input:checked) {
+      border-color: var(--amber);
+      background: color-mix(in srgb, var(--amber) 18%, var(--surface));
+    }
+    .check:has(input:checked) .box {
+      background: var(--amber);
+      border-color: var(--amber);
+    }
+    .check:has(input:checked) .box svg { opacity: 1; }
+    .zh-inline { color: var(--faint); font-weight: 500; font-size: 0.82rem; margin-left: 4px; }
+    .actions {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 0;
+      width: 100%;
+      max-width: 480px;
+      padding: 10px 14px calc(12px + var(--safe-b));
+      display: grid;
+      grid-template-columns: 1fr var(--tap);
+      gap: 10px;
+      background: linear-gradient(to top, var(--bg) 70%, color-mix(in srgb, var(--bg) 70%, transparent));
+      z-index: 9;
+    }
+    #recordBtn {
+      min-height: 54px;
+      border-radius: 16px;
+      background: var(--amber);
+      color: var(--amber-ink);
+      font-weight: 800;
+      font-size: 1.12rem;
+      letter-spacing: 0.02em;
+      box-shadow: 0 8px 24px rgba(255, 176, 32, 0.22);
+    }
+    #recordBtn:active { filter: brightness(1.08); }
+    #recordBtn.is-empty {
+      background: var(--surface-2);
+      color: var(--muted);
+      box-shadow: none;
+    }
+    #copyBtn {
+      width: var(--tap);
+      height: 54px;
+      min-width: var(--tap);
+      border-radius: 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+    }
+    #copyBtn:active { background: var(--surface-2); }
+    #copyBtn svg { width: 22px; height: 22px; }
+    .toast {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      bottom: calc(86px + var(--safe-b));
+      z-index: 20;
+      background: #f4f1ea;
+      color: #16120c;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      max-width: calc(100% - 40px);
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .hint {
+      margin: 8px 2px 0;
+      color: var(--faint);
+      font-size: 0.78rem;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .toast { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="title-row">
+      <h1>
+        <span class="brand">ENVR2020</span>
+        <span class="product">DATA LOGGER</span>
+      </h1>
+      <button type="button" id="locSwitch" data-loc="high" aria-label="Location High-point. Tap to change.">
+        <span class="en" id="locEn">High</span>
+        <span class="zh" id="locZh">山頂</span>
+      </button>
+      <button type="button" id="clearBtn" hidden aria-label="Clear all records">
+        <svg viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 7h20"/>
+          <path d="M9.5 7V4.5h9V7"/>
+          <path d="M6.5 7l1.3 14h12.4L21.5 7"/>
+          <path d="M11 11v7M14 11v7M17 11v7"/>
+        </svg>
+      </button>
+      <button type="button" class="icon-btn" id="downloadBtn" aria-label="Download CSV">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 4v12"/>
+          <path d="M7 11l5 5 5-5"/>
+          <path d="M5 20h14"/>
+        </svg>
+        <span class="badge" id="countBadge" hidden>0</span>
+      </button>
+    </div>
+  </header>
+
+  <form id="log" autocomplete="off" novalidate>
+    <section class="section">
+      <div class="lab">Illuminance (lux) <span class="zh">照度</span></div>
+      <div class="penta">
+        <div class="cell"><input id="lux1" name="lux1" type="text" inputmode="decimal" enterkeyhint="next" spellcheck="false" aria-label="Lux 1"></div>
+        <div class="cell"><input id="lux2" name="lux2" type="text" inputmode="decimal" enterkeyhint="next" spellcheck="false" aria-label="Lux 2"></div>
+        <div class="cell"><input id="lux3" name="lux3" type="text" inputmode="decimal" enterkeyhint="next" spellcheck="false" aria-label="Lux 3"></div>
+        <div class="cell"><input id="lux4" name="lux4" type="text" inputmode="decimal" enterkeyhint="next" spellcheck="false" aria-label="Lux 4"></div>
+        <div class="cell"><input id="lux5" name="lux5" type="text" inputmode="decimal" enterkeyhint="next" spellcheck="false" aria-label="Lux 5"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="lab">Wind (in degree) <span class="zh">風向</span></div>
+      <div class="penta">
+        <div class="cell"><input id="wind1" name="wind1" type="text" inputmode="decimal" enterkeyhint="next" spellcheck="false" aria-label="Wind 1 degrees"></div>
+        <div class="cell"><input id="wind2" name="wind2" type="text" inputmode="decimal" enterkeyhint="next" spellcheck="false" aria-label="Wind 2 degrees"></div>
+        <div class="cell"><input id="wind3" name="wind3" type="text" inputmode="decimal" enterkeyhint="next" spellcheck="false" aria-label="Wind 3 degrees"></div>
+        <div class="cell"><input id="wind4" name="wind4" type="text" inputmode="decimal" enterkeyhint="next" spellcheck="false" aria-label="Wind 4 degrees"></div>
+        <div class="cell"><input id="wind5" name="wind5" type="text" inputmode="decimal" enterkeyhint="next" spellcheck="false" aria-label="Wind 5 degrees"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="pair">
+        <div>
+          <div class="lab">Temp (°C) <span class="zh">溫度</span></div>
+          <input id="temp" name="temp" type="text" inputmode="decimal" enterkeyhint="next" spellcheck="false" aria-label="Temperature Celsius">
+        </div>
+        <div>
+          <div class="lab">Humid (%) <span class="zh">濕度</span></div>
+          <input id="humid" name="humid" type="text" inputmode="decimal" enterkeyhint="next" spellcheck="false" aria-label="Humidity percent">
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="lab">GPS <span class="zh">定位</span></div>
+      <div class="gps-row">
+        <div>
+          <div class="mini">Lat</div>
+          <input id="lat" name="lat" type="text" inputmode="decimal" spellcheck="false" autocapitalize="off" aria-label="Latitude">
+        </div>
+        <div>
+          <div class="mini">Long</div>
+          <input id="lon" name="lon" type="text" inputmode="decimal" spellcheck="false" autocapitalize="off" aria-label="Longitude">
+        </div>
+        <div>
+          <div class="mini">m</div>
+          <input id="elev" name="elev" type="text" inputmode="decimal" spellcheck="false" aria-label="Elevation metres">
+        </div>
+        <button type="button" class="locate" id="gpsLocate" aria-label="Get current location">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 21s7-7.2 7-11.2A7 7 0 1 0 5 9.8C5 13.8 12 21 12 21z"/>
+            <circle cx="12" cy="10" r="2.4"/>
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="checks">
+        <label class="check">
+          <input type="checkbox" id="laser" name="laser">
+          <span class="box" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          Laser <span class="zh-inline">激光</span>
+        </label>
+        <label class="check">
+          <input type="checkbox" id="photo" name="photo">
+          <span class="box" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          Photo <span class="zh-inline">拍照</span>
+        </label>
+      </div>
+    </section>
+  </form>
+
+  <div class="actions">
+    <button type="button" id="recordBtn" class="is-empty">Record Now</button>
+    <button type="button" id="copyBtn" aria-label="Copy current form as text">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2"/>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+  (function () {
+    var KEY_LOC = "envr2020.field.location.v1";
+    var KEY_REC = "envr2020.field.records.v1";
+    var LOC_ORDER = ["high", "mid", "urban"];
+    var LOCS = {
+      high: { id: "high", short: "High", full: "High-point", zh: "山頂" },
+      mid: { id: "mid", short: "Mid", full: "Mid-slope", zh: "山腰" },
+      urban: { id: "urban", short: "Urban", full: "Urban roadside", zh: "路邊" }
+    };
+
+    var locationId = "high";
+    var records = [];
+    var toastTimer = 0;
+    var geoBusy = false;
+    var dlHoldTimer = 0;
+    var suppressDownload = false;
+
+    var $ = function (id) { return document.getElementById(id); };
+    var luxIds = ["lux1", "lux2", "lux3", "lux4", "lux5"];
+    var windIds = ["wind1", "wind2", "wind3", "wind4", "wind5"];
+    var measureIds = luxIds.concat(windIds).concat(["temp", "humid", "lat", "lon", "elev"]);
+
+    function loadState() {
+      try {
+        var loc = localStorage.getItem(KEY_LOC);
+        if (loc && LOCS[loc]) locationId = loc;
+      } catch (e) {}
+      try {
+        var raw = localStorage.getItem(KEY_REC);
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) records = parsed;
+        }
+      } catch (e) { records = []; }
+    }
+
+    function saveLocation() {
+      try { localStorage.setItem(KEY_LOC, locationId); } catch (e) {}
+    }
+
+    function saveRecords() {
+      try {
+        localStorage.setItem(KEY_REC, JSON.stringify(records));
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function setLocation(id) {
+      if (!LOCS[id]) return;
+      locationId = id;
+      saveLocation();
+      var L = LOCS[id];
+      var btn = $("locSwitch");
+      btn.setAttribute("data-loc", id);
+      btn.setAttribute("aria-label", "Location " + L.full + ". Tap to change.");
+      $("locEn").textContent = L.short;
+      $("locZh").textContent = L.zh;
+    }
+
+    function cycleLocation() {
+      var i = LOC_ORDER.indexOf(locationId);
+      if (i < 0) i = 0;
+      setLocation(LOC_ORDER[(i + 1) % LOC_ORDER.length]);
+    }
+
+    function updateBadge() {
+      var n = records.length;
+      var badge = $("countBadge");
+      badge.textContent = String(n);
+      badge.hidden = n === 0;
+    }
+
+    function val(id) {
+      return ($(id).value || "").trim();
+    }
+
+    function hasRoundInput() {
+      var i;
+      for (i = 0; i < measureIds.length; i++) {
+        if (val(measureIds[i])) return true;
+      }
+      if ($("laser").checked || $("photo").checked) return true;
+      return false;
+    }
+
+    function updateRecordEnabled() {
+      var on = hasRoundInput();
+      $("recordBtn").classList.toggle("is-empty", !on);
+      $("recordBtn").setAttribute("aria-disabled", on ? "false" : "true");
+    }
+
+    function toast(msg) {
+      var el = $("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { el.classList.remove("show"); }, 1800);
+    }
+
+    function nowIso(d) {
+      d = d || new Date();
+      var off = -d.getTimezoneOffset();
+      var sign = off >= 0 ? "+" : "-";
+      var pad = function (n) { return String(Math.floor(Math.abs(n))).padStart(2, "0"); };
+      var hh = pad(Math.floor(Math.abs(off) / 60));
+      var mm = pad(Math.abs(off) % 60);
+      var local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+      return local.toISOString().slice(0, 19) + sign + hh + ":" + mm;
+    }
+
+    function numsFrom(ids) {
+      return ids.map(function (id) { return val(id); });
+    }
+
+    function parseNum(s) {
+      if (s == null) return null;
+      var t = String(s).trim().replace(/,/g, "");
+      if (!t) return null;
+      var n = Number(t);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function meanOf(strs) {
+      var nums = [];
+      strs.forEach(function (s) {
+        var n = parseNum(s);
+        if (n !== null) nums.push(n);
+      });
+      if (!nums.length) return "";
+      var m = nums.reduce(function (a, b) { return a + b; }, 0) / nums.length;
+      return String(Math.round(m * 100) / 100);
+    }
+
+    function readForm() {
+      return {
+        time: nowIso(),
+        location: locationId,
+        lat: val("lat"),
+        lon: val("lon"),
+        elevation: val("elev"),
+        lux: numsFrom(luxIds),
+        wind: numsFrom(windIds),
+        temp: val("temp"),
+        humid: val("humid"),
+        laser: $("laser").checked,
+        photo: $("photo").checked
+      };
+    }
+
+    function locLabel(id) {
+      var L = LOCS[id] || LOCS.high;
+      return L.full;
+    }
+
+    function locLabelZh(id) {
+      var L = LOCS[id] || LOCS.high;
+      return L.full + " " + L.zh;
+    }
+
+    function csvEscape(v) {
+      var s = v == null ? "" : String(v);
+      if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }
+
+    function yn(b) { return b ? "yes" : "no"; }
+
+    function recordToRow(r) {
+      return [
+        r.time,
+        locLabel(r.location),
+        r.lat,
+        r.lon,
+        r.elevation,
+        r.lux[0], r.lux[1], r.lux[2], r.lux[3], r.lux[4],
+        meanOf(r.lux),
+        r.wind[0], r.wind[1], r.wind[2], r.wind[3], r.wind[4],
+        meanOf(r.wind),
+        r.temp,
+        r.humid,
+        yn(r.laser),
+        yn(r.photo)
+      ].map(csvEscape).join(",");
+    }
+
+    var CSV_HEADER = [
+      "Time", "Location", "Latitude", "Longitude", "Elevation_m",
+      "Lux1", "Lux2", "Lux3", "Lux4", "Lux5", "Lux_mean",
+      "Wind_deg1", "Wind_deg2", "Wind_deg3", "Wind_deg4", "Wind_deg5", "Wind_mean",
+      "Temp_C", "Humidity_pct", "Laser", "Photo"
+    ].join(",");
+
+    function buildCsv() {
+      var lines = [CSV_HEADER];
+      records.forEach(function (r) { lines.push(recordToRow(r)); });
+      return lines.join("\r\n") + "\r\n";
+    }
+
+    function downloadCsv() {
+      var csv = "\uFEFF" + buildCsv();
+      var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      var a = document.createElement("a");
+      var url = URL.createObjectURL(blob);
+      a.href = url;
+      a.download = "ENVR2020_field_log.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      toast("CSV downloaded · " + records.length + " record" + (records.length === 1 ? "" : "s"));
+    }
+
+    function formPlainText(r) {
+      var lines = [];
+      lines.push("ENVR2020 " + r.time);
+      lines.push("Location: " + locLabelZh(r.location));
+      if (r.lat) lines.push("Latitude: " + r.lat);
+      if (r.lon) lines.push("Longitude: " + r.lon);
+      if (r.elevation) lines.push("Elevation: " + r.elevation + " m");
+      var luxFilled = r.lux.filter(Boolean);
+      if (luxFilled.length) {
+        lines.push("Lux: " + luxFilled.join(", ") + (meanOf(r.lux) !== "" ? " (mean " + meanOf(r.lux) + ")" : ""));
+      }
+      var windFilled = r.wind.filter(Boolean);
+      if (windFilled.length) {
+        lines.push("Wind: " + windFilled.join(", ") + " deg");
+      }
+      if (r.temp) lines.push("Temp: " + r.temp + " °C");
+      if (r.humid) lines.push("Humid: " + r.humid + " %");
+      if (r.laser) lines.push("Laser: yes");
+      if (r.photo) lines.push("Photo: yes");
+      return lines.join("\n");
+    }
+
+    function execCopy(text) {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      ta.style.top = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      return ok;
+    }
+
+    function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(text).then(function () { return true; }).catch(function () {
+          return execCopy(text);
+        });
+      }
+      return Promise.resolve(execCopy(text));
+    }
+
+    function clearRoundFields() {
+      luxIds.concat(windIds).concat(["temp", "humid"]).forEach(function (id) {
+        $(id).value = "";
+      });
+      $("laser").checked = false;
+      $("photo").checked = false;
+      updateRecordEnabled();
+    }
+
+    function tryRecord() {
+      if (!hasRoundInput()) return;
+      var rec = readForm();
+      records.push(rec);
+      if (!saveRecords()) {
+        records.pop();
+        toast("Could not save");
+        return;
+      }
+      updateBadge();
+      clearRoundFields();
+      toast("Saved · " + records.length + " record" + (records.length === 1 ? "" : "s"));
+    }
+
+    function hideClearBtn() {
+      $("clearBtn").hidden = true;
+    }
+
+    function showClearBtn() {
+      $("clearBtn").hidden = false;
+    }
+
+    function clearCache() {
+      records = [];
+      try {
+        localStorage.removeItem(KEY_REC);
+      } catch (e) {}
+      updateBadge();
+      hideClearBtn();
+      toast("Records cleared");
+    }
+
+    function bindDownloadHold(btn) {
+      var startHold = function (e) {
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        suppressDownload = false;
+        try { btn.setPointerCapture(e.pointerId); } catch (err) {}
+        clearTimeout(dlHoldTimer);
+        dlHoldTimer = setTimeout(function () {
+          suppressDownload = true;
+          showClearBtn();
+        }, 5000);
+      };
+      var endHold = function () {
+        clearTimeout(dlHoldTimer);
+      };
+      btn.addEventListener("pointerdown", startHold);
+      btn.addEventListener("pointerup", endHold);
+      btn.addEventListener("pointercancel", endHold);
+      btn.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+      btn.addEventListener("click", function (e) {
+        if (suppressDownload) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          suppressDownload = false;
+          return;
+        }
+        downloadCsv();
+      });
+    }
+
+    function setBusy(on) {
+      geoBusy = on;
+      $("gpsLocate").classList.toggle("busy", on);
+    }
+
+    function fillIfEmpty(id, value) {
+      if (value == null || value === "") return;
+      if ($(id).value.trim() !== "") return;
+      $(id).value = value;
+    }
+
+    function applyPosition(pos) {
+      if (!pos || !pos.coords) return;
+      var c = pos.coords;
+      if (c.latitude != null && Number.isFinite(c.latitude)) {
+        fillIfEmpty("lat", c.latitude.toFixed(7));
+      }
+      if (c.longitude != null && Number.isFinite(c.longitude)) {
+        fillIfEmpty("lon", c.longitude.toFixed(7));
+      }
+      if (c.altitude != null && Number.isFinite(c.altitude)) {
+        fillIfEmpty("elev", String(Math.round(c.altitude * 10) / 10));
+      }
+      updateRecordEnabled();
+    }
+
+    function locate() {
+      if (geoBusy) return;
+      if (!navigator.geolocation || !window.isSecureContext) return;
+      setBusy(true);
+      var done = function () { setBusy(false); };
+      try {
+        navigator.geolocation.getCurrentPosition(
+          function (pos) { applyPosition(pos); done(); },
+          function () { done(); },
+          { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+        );
+      } catch (e) {
+        done();
+      }
+    }
+
+    function onReady() {
+      loadState();
+      setLocation(locationId);
+      updateBadge();
+      updateRecordEnabled();
+
+      $("locSwitch").addEventListener("click", cycleLocation);
+
+      $("log").addEventListener("input", updateRecordEnabled);
+      $("log").addEventListener("change", updateRecordEnabled);
+      $("log").addEventListener("submit", function (e) {
+        e.preventDefault();
+        tryRecord();
+      });
+
+      bindDownloadHold($("downloadBtn"));
+      $("clearBtn").addEventListener("click", function (e) {
+        e.stopPropagation();
+        clearCache();
+      });
+      document.addEventListener("pointerdown", function (e) {
+        var clearBtn = $("clearBtn");
+        if (clearBtn.hidden) return;
+        if (clearBtn.contains(e.target) || $("downloadBtn").contains(e.target)) return;
+        hideClearBtn();
+      });
+      $("copyBtn").addEventListener("click", function () {
+        var text = formPlainText(readForm());
+        copyText(text).then(function (ok) {
+          toast(ok ? "Copied" : "Copy failed");
+        });
+      });
+
+      $("recordBtn").addEventListener("click", tryRecord);
+      $("recordBtn").addEventListener("contextmenu", function (e) { e.preventDefault(); });
+      $("gpsLocate").addEventListener("click", locate);
+    }
+
+    onReady();
+  })();
+  </script>
+  
+</body>
+</html>
