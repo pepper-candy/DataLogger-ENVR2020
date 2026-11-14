@@ -22,18 +22,19 @@ GPS and clipboard work more reliably here than in a downloaded file.
 
 Download **[ENVR2020_field_log.html](./ENVR2020_field_log.html)** from this repository and open it in the phone browser. It is self-contained (no CDN, no extra files).
 
-Android Chrome often **blocks geolocation on `file://`**. If the locate buttons do nothing, type coordinates by hand, or use the Pages URL (opened once with signal) instead.
+Android Chrome often **blocks geolocation on `file://`**. If the locate button does nothing, type coordinates by hand, or use the Pages URL (opened once with signal) instead.
 
 Direct download (after this repo is on `main`):  
 https://github.com/pepper-candy/DataLogger-ENVR2020/raw/main/ENVR2020_field_log.html
 
 ## On the phone
 
-- **Location** (High / Mid / Urban = High-point 山頂, Mid-slope 山腰, Urban roadside 路邊). Last choice is remembered.
-- Fill **any** of: 5 lux, 5 wind degrees, temp, humidity, GPS, elevation, Laser / Photo. You do not need every field.
-- **Record Now** is enabled when any measurement or checkbox has a value. Location alone (and empty GPS) is not enough.
+- **Location** — tap the compact switch in the title bar to cycle High 山頂 → Mid 山腰 → Urban 路邊. Each site has its own colour. Last choice is remembered.
+- Fill **any** of: 5 lux, 5 wind degrees, temp, humidity, latitude, longitude, elevation, Laser / Photo. You do not need every field.
+- **Record Now** is enabled when any measurement or checkbox has a value. Location alone (and empty lat/long) is not enough.
 - Record Now logs **device local time with UTC offset**, then keeps location + GPS/elevation (same site) and clears the round fields.
 - **Copy** (clipboard icon) copies the *current* form as short plain text for WhatsApp etc. Copy does not save a record by itself.
+- **Locate** (pin to the right of lat / long / m) asks the phone for a high-accuracy fix and fills empty coordinate/elevation boxes only — it never overwrites values you already typed.
 - **Download** (top right) exports **all cached records** as `ENVR2020_field_log.csv`.
 
 ## CSV → ArcGIS Pro

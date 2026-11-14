@@ -1,5 +1,5 @@
 /* ENVR 2020 field logger — cache the app shell for offline use. */
-const CACHE = "envr2020-logger-v1";
+const CACHE = "envr2020-logger-v2";
 const ASSETS = [
   "./",
   "./index.html",

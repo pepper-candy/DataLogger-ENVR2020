@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#0c0f14">
   <meta name="description" content="ENVR 2020 field data logger. Records stay on this device.">
-  <title>DATA LOGGER</title>
+  <title>ENVR2020 DATA LOGGER</title>
   
   <style>
     :root {
@@ -21,6 +21,12 @@
       --amber: #ffb020;
       --amber-dim: #c48412;
       --amber-ink: #1a1200;
+      --loc-high: #ffb020;
+      --loc-high-ink: #1a1200;
+      --loc-mid: #2ad4c2;
+      --loc-mid-ink: #04221e;
+      --loc-urban: #ff6bb5;
+      --loc-urban-ink: #2a0014;
       --ok: #3ddc97;
       --danger: #ff7a6b;
       --tap: 48px;
@@ -80,25 +86,45 @@
       gap: 8px;
       min-height: var(--tap);
     }
-    .mark {
-      flex: 0 0 auto;
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      background: var(--surface);
-      border: 1px solid var(--line);
-      display: grid;
-      place-items: center;
-      color: var(--amber);
-    }
-    .mark svg { width: 22px; height: 22px; }
     h1 {
-      flex: 1;
-      font-size: 1.05rem;
-      letter-spacing: 0.14em;
+      flex: 1 1 auto;
+      min-width: 0;
+      font-size: clamp(0.72rem, 3.5vw, 0.92rem);
+      letter-spacing: 0.04em;
       font-weight: 800;
-      text-align: center;
+      text-align: left;
+      line-height: 1.15;
     }
+    #locSwitch {
+      flex: 0 0 auto;
+      min-width: 76px;
+      max-width: 38%;
+      min-height: var(--tap);
+      padding: 4px 10px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+    #locSwitch .en { font-size: 0.92rem; }
+    #locSwitch .zh { font-size: 0.7rem; font-weight: 600; opacity: 0.78; }
+    #locSwitch[data-loc="high"] {
+      background: var(--loc-high);
+      color: var(--loc-high-ink);
+    }
+    #locSwitch[data-loc="mid"] {
+      background: var(--loc-mid);
+      color: var(--loc-mid-ink);
+    }
+    #locSwitch[data-loc="urban"] {
+      background: var(--loc-urban);
+      color: var(--loc-urban-ink);
+    }
+    #locSwitch:active { filter: brightness(1.08); }
     .icon-btn {
       flex: 0 0 auto;
       width: var(--tap);
@@ -131,32 +157,6 @@
       place-items: center;
     }
     .badge[hidden] { display: none; }
-    .locs {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      margin-top: 10px;
-    }
-    .loc {
-      min-height: var(--tap);
-      border-radius: 12px;
-      background: var(--surface);
-      border: 1px solid var(--line);
-      padding: 6px 4px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1px;
-    }
-    .loc .en { font-weight: 700; font-size: 0.95rem; }
-    .loc .zh { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.04em; }
-    .loc[aria-checked="true"] {
-      background: var(--amber);
-      border-color: var(--amber);
-      color: var(--amber-ink);
-    }
-    .loc[aria-checked="true"] .zh { color: rgba(26, 18, 0, 0.72); }
     .section { margin: 0 0 16px; }
     .lab {
       display: flex;
@@ -183,19 +183,15 @@
     }
     .gps-row {
       display: grid;
-      grid-template-columns: 1fr minmax(108px, 34%);
+      grid-template-columns: 1fr 1fr minmax(68px, 0.72fr) var(--tap);
       gap: 8px;
+      align-items: end;
     }
-    .field { position: relative; }
-    .field.labeled > .sub {
-      position: absolute;
-      top: -9px;
-      left: 10px;
-      font-size: 11px;
+    .mini {
+      font-size: 0.75rem;
       color: var(--faint);
-      background: var(--bg);
-      padding: 0 5px;
-      z-index: 1;
+      font-weight: 600;
+      margin: 0 0 4px 2px;
     }
     input[type="text"] {
       width: 100%;
@@ -204,37 +200,31 @@
       border-radius: 12px;
       background: var(--bg-2);
       border: 1px solid var(--line);
-      padding: 0 12px;
+      padding: 0 10px;
       font-size: 16px;
       font-variant-numeric: tabular-nums;
       caret-color: var(--amber);
     }
-    .has-locate input { padding-right: 50px; }
     input[type="text"]:focus {
       outline: 2px solid var(--amber);
       outline-offset: 1px;
       border-color: var(--amber-dim);
     }
     .locate {
-      position: absolute;
-      right: 4px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 44px;
-      height: 44px;
-      min-width: 44px;
-      min-height: 44px;
-      border-radius: 50%;
-      background: var(--surface-2);
+      width: var(--tap);
+      height: 52px;
+      min-width: var(--tap);
+      min-height: var(--tap);
+      border-radius: 14px;
+      background: var(--surface);
       border: 1px solid var(--line);
       display: grid;
       place-items: center;
       color: var(--amber);
     }
-    .locate:active { background: #2c3648; }
-    .locate svg { width: 20px; height: 20px; }
-    .locate.busy svg { animation: spin 0.9s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .locate:active { background: var(--surface-2); }
+    .locate svg { width: 22px; height: 22px; }
+    .locate.busy { opacity: 0.45; }
     .checks {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -349,20 +339,18 @@
       font-size: 0.78rem;
     }
     @media (prefers-reduced-motion: reduce) {
-      .locate.busy svg, .toast { animation: none; transition: none; }
+      .toast { transition: none; }
     }
   </style>
 </head>
 <body>
   <header class="topbar">
     <div class="title-row">
-      <span class="mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 21s7-7.2 7-11.2A7 7 0 1 0 5 9.8C5 13.8 12 21 12 21z"/>
-          <circle cx="12" cy="10" r="2.4"/>
-        </svg>
-      </span>
-      <h1>DATA LOGGER</h1>
+      <h1>ENVR2020 DATA LOGGER</h1>
+      <button type="button" id="locSwitch" data-loc="high" aria-label="Location High-point. Tap to change.">
+        <span class="en" id="locEn">High</span>
+        <span class="zh" id="locZh">山頂</span>
+      </button>
       <button type="button" class="icon-btn" id="downloadBtn" aria-label="Download CSV">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 4v12"/>
@@ -370,17 +358,6 @@
           <path d="M5 20h14"/>
         </svg>
         <span class="badge" id="countBadge" hidden>0</span>
-      </button>
-    </div>
-    <div class="locs" role="radiogroup" aria-label="Location">
-      <button type="button" class="loc" role="radio" data-loc="high" aria-checked="true">
-        <span class="en">High</span><span class="zh">山頂</span>
-      </button>
-      <button type="button" class="loc" role="radio" data-loc="mid" aria-checked="false">
-        <span class="en">Mid</span><span class="zh">山腰</span>
-      </button>
-      <button type="button" class="loc" role="radio" data-loc="urban" aria-checked="false">
-        <span class="en">Urban</span><span class="zh">路邊</span>
       </button>
     </div>
   </header>
@@ -422,31 +399,26 @@
     </section>
 
     <section class="section">
-      <div class="lab">GPS (lat, long) <span class="zh">定位</span></div>
+      <div class="lab">GPS <span class="zh">定位</span></div>
       <div class="gps-row">
-        <div class="field has-locate">
-          <input id="gps" name="gps" type="text" inputmode="text" spellcheck="false" autocapitalize="off" placeholder="lat, long" aria-label="Latitude and longitude">
-          <button type="button" class="locate" id="gpsLocate" aria-label="Refresh GPS coordinates">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="23 4 23 10 17 10"/>
-              <polyline points="1 20 1 14 7 14"/>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/>
-              <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/>
-            </svg>
-          </button>
+        <div>
+          <div class="mini">Lat</div>
+          <input id="lat" name="lat" type="text" inputmode="decimal" spellcheck="false" autocapitalize="off" aria-label="Latitude">
         </div>
-        <div class="field has-locate labeled">
-          <span class="sub">m</span>
+        <div>
+          <div class="mini">Long</div>
+          <input id="lon" name="lon" type="text" inputmode="decimal" spellcheck="false" autocapitalize="off" aria-label="Longitude">
+        </div>
+        <div>
+          <div class="mini">m</div>
           <input id="elev" name="elev" type="text" inputmode="decimal" spellcheck="false" aria-label="Elevation metres">
-          <button type="button" class="locate" id="elevLocate" aria-label="Refresh elevation">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="23 4 23 10 17 10"/>
-              <polyline points="1 20 1 14 7 14"/>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/>
-              <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/>
-            </svg>
-          </button>
         </div>
+        <button type="button" class="locate" id="gpsLocate" aria-label="Get current location">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 21s7-7.2 7-11.2A7 7 0 1 0 5 9.8C5 13.8 12 21 12 21z"/>
+            <circle cx="12" cy="10" r="2.4"/>
+          </svg>
+        </button>
       </div>
     </section>
 
@@ -486,10 +458,11 @@
   (function () {
     var KEY_LOC = "envr2020.field.location.v1";
     var KEY_REC = "envr2020.field.records.v1";
+    var LOC_ORDER = ["high", "mid", "urban"];
     var LOCS = {
-      high: { id: "high", full: "High-point", zh: "山頂" },
-      mid: { id: "mid", full: "Mid-slope", zh: "山腰" },
-      urban: { id: "urban", full: "Urban roadside", zh: "路邊" }
+      high: { id: "high", short: "High", full: "High-point", zh: "山頂" },
+      mid: { id: "mid", short: "Mid", full: "Mid-slope", zh: "山腰" },
+      urban: { id: "urban", short: "Urban", full: "Urban roadside", zh: "路邊" }
     };
 
     var locationId = "high";
@@ -504,7 +477,7 @@
     var $ = function (id) { return document.getElementById(id); };
     var luxIds = ["lux1", "lux2", "lux3", "lux4", "lux5"];
     var windIds = ["wind1", "wind2", "wind3", "wind4", "wind5"];
-    var measureIds = luxIds.concat(windIds).concat(["temp", "humid", "gps", "elev"]);
+    var measureIds = luxIds.concat(windIds).concat(["temp", "humid", "lat", "lon", "elev"]);
 
     function loadState() {
       try {
@@ -537,9 +510,18 @@
       if (!LOCS[id]) return;
       locationId = id;
       saveLocation();
-      document.querySelectorAll(".loc").forEach(function (btn) {
-        btn.setAttribute("aria-checked", btn.getAttribute("data-loc") === id ? "true" : "false");
-      });
+      var L = LOCS[id];
+      var btn = $("locSwitch");
+      btn.setAttribute("data-loc", id);
+      btn.setAttribute("aria-label", "Location " + L.full + ". Tap to change.");
+      $("locEn").textContent = L.short;
+      $("locZh").textContent = L.zh;
+    }
+
+    function cycleLocation() {
+      var i = LOC_ORDER.indexOf(locationId);
+      if (i < 0) i = 0;
+      setLocation(LOC_ORDER[(i + 1) % LOC_ORDER.length]);
     }
 
     function updateBadge() {
@@ -610,28 +592,12 @@
       return String(Math.round(m * 100) / 100);
     }
 
-    function parseGps(s) {
-      var t = (s || "").trim();
-      if (!t) return { lat: "", lon: "" };
-      var parts = t.split(/[,;/]+/).map(function (p) { return p.trim(); }).filter(Boolean);
-      if (parts.length < 2) {
-        parts = t.split(/\s+/).filter(Boolean);
-      }
-      if (parts.length >= 2) {
-        var lat = parseNum(parts[0]);
-        var lon = parseNum(parts[1]);
-        if (lat !== null && lon !== null) return { lat: parts[0], lon: parts[1] };
-      }
-      return { lat: "", lon: "" };
-    }
-
     function readForm() {
-      var gps = parseGps(val("gps"));
       return {
         time: nowIso(),
         location: locationId,
-        lat: gps.lat,
-        lon: gps.lon,
+        lat: val("lat"),
+        lon: val("lon"),
         elevation: val("elev"),
         lux: numsFrom(luxIds),
         wind: numsFrom(windIds),
@@ -709,7 +675,8 @@
       var lines = [];
       lines.push("ENVR2020 " + r.time);
       lines.push("Location: " + locLabelZh(r.location));
-      if (r.lat && r.lon) lines.push("GPS: " + r.lat + ", " + r.lon);
+      if (r.lat) lines.push("Latitude: " + r.lat);
+      if (r.lon) lines.push("Longitude: " + r.lon);
       if (r.elevation) lines.push("Elevation: " + r.elevation + " m");
       var luxFilled = r.lux.filter(Boolean);
       if (luxFilled.length) {
@@ -819,22 +786,25 @@
     function setBusy(on) {
       geoBusy = on;
       $("gpsLocate").classList.toggle("busy", on);
-      $("elevLocate").classList.toggle("busy", on);
+    }
+
+    function fillIfEmpty(id, value) {
+      if (value == null || value === "") return;
+      if ($(id).value.trim() !== "") return;
+      $(id).value = value;
     }
 
     function applyPosition(pos) {
       if (!pos || !pos.coords) return;
       var c = pos.coords;
-      if ($("gps").value.trim() === "") {
-        if (c.latitude != null && c.longitude != null &&
-            Number.isFinite(c.latitude) && Number.isFinite(c.longitude)) {
-          $("gps").value = c.latitude.toFixed(7) + ", " + c.longitude.toFixed(7);
-        }
+      if (c.latitude != null && Number.isFinite(c.latitude)) {
+        fillIfEmpty("lat", c.latitude.toFixed(7));
       }
-      if ($("elev").value.trim() === "") {
-        if (c.altitude != null && Number.isFinite(c.altitude)) {
-          $("elev").value = String(Math.round(c.altitude * 10) / 10);
-        }
+      if (c.longitude != null && Number.isFinite(c.longitude)) {
+        fillIfEmpty("lon", c.longitude.toFixed(7));
+      }
+      if (c.altitude != null && Number.isFinite(c.altitude)) {
+        fillIfEmpty("elev", String(Math.round(c.altitude * 10) / 10));
       }
       updateRecordEnabled();
     }
@@ -861,9 +831,7 @@
       updateBadge();
       updateRecordEnabled();
 
-      document.querySelectorAll(".loc").forEach(function (btn) {
-        btn.addEventListener("click", function () { setLocation(btn.getAttribute("data-loc")); });
-      });
+      $("locSwitch").addEventListener("click", cycleLocation);
 
       $("log").addEventListener("input", updateRecordEnabled);
       $("log").addEventListener("change", updateRecordEnabled);
@@ -882,7 +850,6 @@
 
       bindHold($("recordBtn"));
       $("gpsLocate").addEventListener("click", locate);
-      $("elevLocate").addEventListener("click", locate);
     }
 
     onReady();
