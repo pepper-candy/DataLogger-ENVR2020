@@ -193,6 +193,22 @@
       place-items: center;
     }
     .badge[hidden] { display: none; }
+    #clearBtn {
+      flex: 0 0 auto;
+      width: 56px;
+      height: var(--tap);
+      min-width: 56px;
+      min-height: var(--tap);
+      border-radius: 14px;
+      background: var(--danger);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      border: 0;
+    }
+    #clearBtn[hidden] { display: none; }
+    #clearBtn svg { width: 28px; height: 22px; }
+    #clearBtn:active { filter: brightness(0.9); }
     .section { margin: 0 0 16px; }
     .lab {
       display: flex;
@@ -390,6 +406,14 @@
         <span class="en" id="locEn">High</span>
         <span class="zh" id="locZh">山頂</span>
       </button>
+      <button type="button" id="clearBtn" hidden aria-label="Clear all records">
+        <svg viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 7h20"/>
+          <path d="M9.5 7V4.5h9V7"/>
+          <path d="M6.5 7l1.3 14h12.4L21.5 7"/>
+          <path d="M11 11v7M14 11v7M17 11v7"/>
+        </svg>
+      </button>
       <button type="button" class="icon-btn" id="downloadBtn" aria-label="Download CSV">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 4v12"/>
@@ -506,12 +530,10 @@
 
     var locationId = "high";
     var records = [];
-    var recordStreak = 0;
     var toastTimer = 0;
     var geoBusy = false;
-    var holdTimer = 0;
-    var holdFired = false;
-    var ignoreClickUntil = 0;
+    var dlHoldTimer = 0;
+    var suppressDownload = false;
 
     var $ = function (id) { return document.getElementById(id); };
     var luxIds = ["lux1", "lux2", "lux3", "lux4", "lux5"];
@@ -776,50 +798,56 @@
         toast("Could not save");
         return;
       }
-      recordStreak += 1;
       updateBadge();
       clearRoundFields();
-      ignoreClickUntil = Date.now() + 400;
       toast("Saved · " + records.length + " record" + (records.length === 1 ? "" : "s"));
+    }
+
+    function hideClearBtn() {
+      $("clearBtn").hidden = true;
+    }
+
+    function showClearBtn() {
+      $("clearBtn").hidden = false;
     }
 
     function clearCache() {
       records = [];
-      recordStreak = 0;
       try {
         localStorage.removeItem(KEY_REC);
-        localStorage.removeItem(KEY_LOC);
       } catch (e) {}
-      setLocation("high");
       updateBadge();
+      hideClearBtn();
       toast("Records cleared");
     }
 
-    function bindHold(btn) {
+    function bindDownloadHold(btn) {
       var startHold = function (e) {
         if (e.pointerType === "mouse" && e.button !== 0) return;
-        holdFired = false;
+        suppressDownload = false;
         try { btn.setPointerCapture(e.pointerId); } catch (err) {}
-        clearTimeout(holdTimer);
-        holdTimer = setTimeout(function () {
-          holdFired = true;
-          if (recordStreak >= 10) clearCache();
-        }, 2000);
+        clearTimeout(dlHoldTimer);
+        dlHoldTimer = setTimeout(function () {
+          suppressDownload = true;
+          showClearBtn();
+        }, 5000);
       };
-      var endHold = function (e) {
-        clearTimeout(holdTimer);
-        if (holdFired) {
-          if (e && e.preventDefault) e.preventDefault();
-          return;
-        }
-        if (Date.now() < ignoreClickUntil) return;
-        tryRecord();
+      var endHold = function () {
+        clearTimeout(dlHoldTimer);
       };
       btn.addEventListener("pointerdown", startHold);
       btn.addEventListener("pointerup", endHold);
-      btn.addEventListener("pointercancel", function () { clearTimeout(holdTimer); });
-      btn.addEventListener("click", function (e) { e.preventDefault(); });
+      btn.addEventListener("pointercancel", endHold);
       btn.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+      btn.addEventListener("click", function (e) {
+        if (suppressDownload) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          suppressDownload = false;
+          return;
+        }
+        downloadCsv();
+      });
     }
 
     function setBusy(on) {
@@ -879,7 +907,17 @@
         tryRecord();
       });
 
-      $("downloadBtn").addEventListener("click", downloadCsv);
+      bindDownloadHold($("downloadBtn"));
+      $("clearBtn").addEventListener("click", function (e) {
+        e.stopPropagation();
+        clearCache();
+      });
+      document.addEventListener("pointerdown", function (e) {
+        var clearBtn = $("clearBtn");
+        if (clearBtn.hidden) return;
+        if (clearBtn.contains(e.target) || $("downloadBtn").contains(e.target)) return;
+        hideClearBtn();
+      });
       $("copyBtn").addEventListener("click", function () {
         var text = formPlainText(readForm());
         copyText(text).then(function (ok) {
@@ -887,7 +925,8 @@
         });
       });
 
-      bindHold($("recordBtn"));
+      $("recordBtn").addEventListener("click", tryRecord);
+      $("recordBtn").addEventListener("contextmenu", function (e) { e.preventDefault(); });
       $("gpsLocate").addEventListener("click", locate);
     }
 
