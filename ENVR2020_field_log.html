@@ -86,6 +86,26 @@
       gap: 8px;
       min-height: var(--tap);
     }
+    .title-row h1,
+    .title-row #locSwitch,
+    .title-row .icon-btn {
+      align-self: center;
+    }
+    @media (min-width: 390px) {
+      #locSwitch {
+        flex-direction: row;
+        align-items: baseline;
+        justify-content: center;
+        gap: 6px;
+        width: auto;
+        min-width: 132px;
+        padding: 6px 16px;
+      }
+      #locSwitch .en { font-size: 0.95rem; }
+      #locSwitch .zh { font-size: 0.78rem; font-weight: 600; opacity: 0.85; }
+    }
+
+
     h1 {
       flex: 1 1 auto;
       min-width: 0;
